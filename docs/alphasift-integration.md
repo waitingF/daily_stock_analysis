@@ -196,6 +196,42 @@ AlphaSift 侧已在 `ZhuLinsen/alphasift@9f522747caafd3c0b1ddb7e14d5cf44c8580b6c
 - 结果页展示运行 ID、样本数量、过滤后数量、LLM 是否重排、LLM 覆盖率和 DSA 增强计数；如果 AlphaSift 返回 warning/source error/LLM parse error 或 `llm_ranked=false`，页面会明确显示降级原因，避免把本地因子结果误展示成正常 LLM 判断；重复的快照源 fallback warning/source error 会在前端合并展示为一条“数据源降级”提示。
 - 展开候选时展示 AlphaSift 摘要、因子和 LLM 判断；若 DSA 已增强，还会展示 `DSA 增强摘要`、`DSA 新闻` 和 `DSA 增强提示`。
 
+## 本地开发（editable AlphaSift）
+
+本地联调时，DSA 直接从当前 Python 环境导入 `alphasift.dsa_adapter`；`ALPHASIFT_INSTALL_SPEC` 不能指向本地目录，也不应在 Web 设置页点击「修复安装」，否则会重装回 `requirements.txt` 固定 pin。
+
+推荐使用仓库脚本在 bundled / 本地 editable 间切换并启动后端：
+
+```bash
+# 交互式选择 AlphaSift 来源，默认以 --serve-only 启动
+./scripts/run-dev-with-alphasift.sh
+
+# 明确使用本地 editable（默认路径：<repo>/../alphasift）
+./scripts/run-dev-with-alphasift.sh --local
+
+# 自定义本地仓库路径
+ALPHASIFT_LOCAL_PATH=/path/to/alphasift ./scripts/run-dev-with-alphasift.sh --local
+
+# 仅切换依赖，不启动服务
+./scripts/run-dev-with-alphasift.sh --local --install-only
+
+# 切回 requirements.txt pin 版本
+./scripts/run-dev-with-alphasift.sh --bundled --install-only
+
+# 查看当前环境中的 AlphaSift 来源
+./scripts/run-dev-with-alphasift.sh --status
+
+# 透传 main.py 参数
+./scripts/run-dev-with-alphasift.sh --local -- --serve-only --port 8000
+```
+
+脚本行为说明：
+
+- `--local`：执行 `pip install -e <ALPHASIFT_LOCAL_PATH>`，本地代码改动后重启 DSA 即可生效。
+- `--bundled`：按 `requirements.txt` 中的 git pin 强制重装 AlphaSift。
+- 未指定模式时会提示 `local / bundled / skip` 三选一；`skip` 保留当前环境已安装版本。
+- 启动前会校验 `alphasift.dsa_adapter` 可导入，并打印当前包路径与 `get_status()` 摘要。
+
 ## 桌面端说明
 
 源码运行的桌面端复用同一个 Python 后端环境，并设置 `DSA_DESKTOP_MODE=true`；通过设置页开启时如缺少适配层，会提示更新依赖或重建后端产物。

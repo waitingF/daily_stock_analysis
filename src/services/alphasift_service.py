@@ -1860,7 +1860,25 @@ def _alphasift_dsa_daily_history_provider() -> Iterator[None]:
         lookback_days: int = 120,
         source: str = "akshare",
         retries: int = 2,
+        cache_dir: str | Path | None = None,
+        cache_ttl_seconds: float | None = None,
+        daily_bars_dir: str | Path | None = None,
+        end_date: str | None = None,
+        daily_local_fallback_live: bool = False,
     ) -> Any:
+        fetch_kwargs = {
+            "lookback_days": lookback_days,
+            "source": source,
+            "retries": retries,
+            "cache_dir": cache_dir,
+            "cache_ttl_seconds": cache_ttl_seconds,
+            "daily_bars_dir": daily_bars_dir,
+            "end_date": end_date,
+            "daily_local_fallback_live": daily_local_fallback_live,
+        }
+        # Local Parquet daily bars must not be routed through DSA online/DB fetchers.
+        if _env_text(source).lower() == "local":
+            return original_fetch(code, **fetch_kwargs)
         try:
             dsa_df, dsa_source = get_dsa_daily_history(code, lookback_days=lookback_days)
             normalized = _normalize_dsa_daily_history(dsa_df)
@@ -1874,7 +1892,7 @@ def _alphasift_dsa_daily_history_provider() -> Iterator[None]:
                 source,
                 exc,
             )
-        return original_fetch(code, lookback_days=lookback_days, source=source, retries=retries)
+        return original_fetch(code, **fetch_kwargs)
 
     with _ALPHASIFT_RUNTIME_ENV_LOCK:
         setattr(daily_module, "fetch_daily_history", fetch_daily_history_with_dsa)
