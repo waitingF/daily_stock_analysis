@@ -1919,6 +1919,62 @@ class AlphaSiftOpportunitiesApiTestCase(unittest.TestCase):
         original_daily_fetch.assert_not_called()
         self.assertIs(daily_module.fetch_daily_history, original_daily_fetch)
 
+    def test_screen_local_daily_source_bypasses_dsa_daily_history_provider(self) -> None:
+        config = self._config(enabled=True)
+        parent_module = ModuleType("alphasift")
+        daily_module = ModuleType("alphasift.daily")
+        original_daily_fetch = MagicMock(
+            return_value=SimpleNamespace(
+                empty=False,
+                attrs={"daily_source": "local"},
+            )
+        )
+        daily_module.fetch_daily_history = original_daily_fetch
+        parent_module.daily = daily_module
+        captured: Dict[str, Any] = {}
+
+        def screen_with_local_daily_fetch(strategy: str, **kwargs: Any) -> Dict[str, Any]:
+            daily_module.fetch_daily_history(
+                "000002",
+                lookback_days=120,
+                source="local",
+                retries=1,
+                daily_bars_dir="/tmp/daily_bars",
+                end_date="20260703",
+            )
+            captured["context"] = kwargs.get("context")
+            return {
+                "strategy": strategy,
+                "candidates": [{"code": "000002", "score": 80.0}],
+            }
+
+        fake_module = _make_adapter_module(screen=MagicMock(side_effect=screen_with_local_daily_fetch))
+
+        with (
+            patch.dict(sys.modules, {"alphasift": parent_module, "alphasift.daily": daily_module}),
+            patch("src.services.alphasift_service._import_alphasift", return_value=fake_module),
+            patch(
+                "src.services.alphasift_service.get_dsa_daily_history",
+                side_effect=AssertionError("local daily source should bypass DSA history"),
+            ) as dsa_history_mock,
+        ):
+            payload = self._screen(config, market="cn", strategy="dual_low", max_results=5)
+
+        original_daily_fetch.assert_called_once_with(
+            "000002",
+            lookback_days=120,
+            source="local",
+            retries=1,
+            cache_dir=None,
+            cache_ttl_seconds=None,
+            daily_bars_dir="/tmp/daily_bars",
+            end_date="20260703",
+            daily_local_fallback_live=False,
+        )
+        dsa_history_mock.assert_not_called()
+        self.assertEqual(payload["candidate_count"], 1)
+        self.assertIs(daily_module.fetch_daily_history, original_daily_fetch)
+
     def test_screen_enriches_top_candidates_with_dsa_context(self) -> None:
         config = self._config(enabled=True)
         fake_manager = SimpleNamespace(get_stock_name=MagicMock(return_value="贵州茅台"))
