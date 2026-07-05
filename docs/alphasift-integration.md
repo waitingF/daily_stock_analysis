@@ -4,6 +4,8 @@
 
 AlphaSift 作为独立仓库维护的选股引擎接入 DSA。DSA 默认不启用它，也不把 AlphaSift 的策略逻辑复制进主仓库；后端依赖会随 `requirements.txt` 安装，启用后只通过 `alphasift.dsa_adapter` 稳定适配层调用 AlphaSift。
 
+若计划从本地研究项目 `self-stock-project` 向 AlphaSift/DSA 移植选股或研究能力，请先阅读 [self-stock → AlphaSift/DSA 移植方案](self-stock-migration-plan.md)（草案）；选股算法应进入 AlphaSift，DSA 仅负责集成与展示。
+
 ## 当前方案
 
 - 默认关闭：`ALPHASIFT_ENABLED=false`。

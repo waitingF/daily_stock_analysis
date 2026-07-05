@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 > For user-friendly release highlights, see the [GitHub Releases](https://github.com/ZhuLinsen/daily_stock_analysis/releases) page.
 
 ## [Unreleased]
+- [文档] 新增 `docs/self-stock-migration-plan.md`：记录 self-stock-project 向 AlphaSift/DSA 的分层移植改造方案（草案；多项 enrich/导出/复盘能力明确排除，见文档 §11）。
+- [文档] self-stock 移植 M-001/M-002 已在 AlphaSift 落地（ZG/KDJ/BOLL/brick 指标 + B1/B2 策略 YAML）；M-003 flow 组合策略与 M-004 pattern-search CLI 亦已落地；DSA 侧需 bump AlphaSift pin 后才能在选股页选用。
 - [改进] GitHub Actions 每日分析工作流补齐 TickFlow 数据源环境变量映射，并收敛 README 数据源稳定性说明到完整指南。
 - [修复] WebUI 启动时显式 `--host` / `--port` 不再被 `.env` 中的 `WEBUI_HOST` / `WEBUI_PORT` 覆盖，未传 CLI 参数时统一使用解析后的运行时配置。
 - [改进] GitHub Actions: 每日分析工作流（`00-daily-analysis.yml`）新增钉钉通知环境变量映射，支持在云端定时任务中直接使用钉钉机器人。
